@@ -6,24 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Credit Scoring Model Simulator</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Add Babel for in-browser JSX/TSX transformation -->
-    <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
 
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.25.0"
-  }
-}
-</script>
+    <!-- Load the app entry as a native ES module so Vite can handle TS/JSX properly -->
+    <!-- When running via Vite, use a module script pointing at the project's entry file. -->
+    <script type="module" src="/index.tsx"></script>
 </head>
   <body class="bg-slate-900 text-white">
-    <div id="root"></div>
-    <!-- Change script type to 'text/babel' and add 'data-type="module"' for Babel to process it correctly -->
-    <script type="text/babel" data-type="module" src="/index.tsx"></script>
+  <div id="root"></div>
+  <!-- Vite will load /index.tsx as an ES module; don't use in-browser Babel or importmaps here -->
   </body>
 </html>

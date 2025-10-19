@@ -1,97 +1,70 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { CreditFormData, PredictionResult } from '../types';
 
-// Securely reads the API key from the GitHub Codespaces secret you configured.
-const apiKey = process.env.GEMINI_API_KEY;
+// Note: Calling Google GenAI from the browser is not recommended.
+// This file provides a deterministic simulated implementation so the UI
+// can run in development without a server-side API key. Replace with a
+// server-side implementation that calls the real API for production.
 
-if (!apiKey) {
-  // This error will be shown if the secret is not set up correctly in your repository settings.
-  throw new Error("GEMINI_API_KEY not set. Please go to your repository's Settings > Secrets and variables > Codespaces, and create a new secret named GEMINI_API_KEY with your API key as the value. You may need to rebuild the Codespace container for the change to take effect.");
-}
+const clamp = (v: number, a = 300, b = 850) => Math.max(a, Math.min(b, Math.round(v)));
 
-const ai = new GoogleGenAI({ apiKey: apiKey });
-
-const responseSchema = {
-  type: Type.OBJECT,
-  properties: {
-    creditScore: {
-      type: Type.INTEGER,
-      description: "A credit score between 300 and 850.",
-    },
-    creditRating: {
-      type: Type.STRING,
-      enum: ['Excellent', 'Good', 'Fair', 'Poor', 'Very Poor'],
-      description: "The credit rating category.",
-    },
-    justification: {
-      type: Type.STRING,
-      description: "A brief, 2-3 sentence justification for the score and rating, highlighting key influencing factors.",
-    },
-    modelAnalysis: {
-      type: Type.OBJECT,
-      properties: {
-        precision: { type: Type.NUMBER },
-        recall: { type: Type.NUMBER },
-        f1Score: { type: Type.NUMBER },
-        rocAuc: { type: Type.NUMBER },
-        modelUsed: { type: Type.STRING, description: "The type of classification model simulated, e.g., 'Simulated Random Forest'." },
-      },
-      required: ['precision', 'recall', 'f1Score', 'rocAuc', 'modelUsed'],
-      description: "Simulated performance metrics of the underlying classification model.",
-    },
-  },
-  required: ['creditScore', 'creditRating', 'justification', 'modelAnalysis'],
+const scoreToRating = (score: number) => {
+  if (score >= 800) return 'Excellent';
+  if (score >= 740) return 'Good';
+  if (score >= 670) return 'Fair';
+  if (score >= 580) return 'Poor';
+  return 'Very Poor';
 };
 
-export const assessCreditWorthiness = async (
-  data: CreditFormData
-): Promise<PredictionResult> => {
-  const prompt = `
-    Analyze the following financial profile to determine creditworthiness. Act as an expert credit risk analyst AI.
+const seededRand = (seed: number) => {
+  // simple LCG
+  let s = Math.abs(Math.floor(seed)) % 2147483647;
+  return () => {
+    s = (s * 48271) % 2147483647;
+    return (s % 1000) / 1000;
+  };
+};
 
-    Financial Profile:
-    - Annual Income: $${data.income.toLocaleString()}
-    - Total Debt: $${data.debt.toLocaleString()}
-    - Credit Utilization: ${data.creditUtilization}%
-    - Number of Late Payments (last 12 months): ${data.latePayments}
-    - Age of Oldest Credit Account (years): ${data.creditAge}
-    - Total Number of Open Accounts: ${data.numAccounts}
+export const assessCreditWorthiness = async (data: CreditFormData): Promise<PredictionResult> => {
+  // deterministic pseudo-randomness based on input so repeated calls return similar results
+  const seed = Math.floor(data.income + data.debt + data.creditUtilization + data.latePayments * 37 + data.creditAge * 13 + data.numAccounts * 7);
+  const rand = seededRand(seed);
 
-    Based on this profile, provide a JSON response containing:
-    1. A credit score (300-850).
-    2. A credit rating ('Excellent', 'Good', 'Fair', 'Poor', 'Very Poor').
-    3. A brief justification for the assessment.
-    4. A simulated performance analysis of the underlying classification model (Random Forest) including precision, recall, F1-score, and ROC-AUC metrics (generate realistic values for these).
-  `;
+  // Simple heuristic scoring to simulate an ML model
+  const utilizationPenalty = (data.creditUtilization / 100) * 150; // up to -150
+  const debtRatio = data.debt > 0 ? Math.min(1, data.debt / Math.max(1, data.income)) : 0;
+  const debtPenalty = debtRatio * 200; // up to -200
+  const latePenalty = Math.min(60, data.latePayments * 20);
+  const ageBonus = Math.min(60, data.creditAge * 3);
+  const accountsBonus = Math.min(40, data.numAccounts * 2);
 
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: responseSchema,
-      },
-    });
+  const base = 720;
+  const noisy = (rand() - 0.5) * 20;
+  const rawScore = base - utilizationPenalty - debtPenalty - latePenalty + ageBonus + accountsBonus + noisy;
+  const creditScore = clamp(rawScore);
 
-    const jsonText = response.text.trim();
-    const result = JSON.parse(jsonText);
+  const creditRating = scoreToRating(creditScore) as PredictionResult['creditRating'];
 
-    // Basic validation to ensure the result matches the expected structure
-    if (
-      typeof result.creditScore !== 'number' ||
-      typeof result.creditRating !== 'string' ||
-      typeof result.justification !== 'string' ||
-      typeof result.modelAnalysis !== 'object'
-    ) {
-      throw new Error('Invalid response structure from API.');
-    }
+  const justification = `Based on income of $${data.income.toLocaleString()} and a credit utilization of ${data.creditUtilization}%, this profile results in a ${creditRating.toLowerCase()} score. Key factors: ${data.latePayments} late payments, debt-to-income ratio ~${(debtRatio * 100).toFixed(0)}%, and account history of ${data.creditAge} years.`;
 
-    return result as PredictionResult;
-  } catch (error) {
-    console.error("Error calling Gemini API:", error);
-    throw new Error(
-      "Failed to assess creditworthiness. The API might be unavailable or the response was malformed."
-    );
-  }
+  // Simulated model analysis (real values should come from a server/ML pipeline)
+  const precision = 0.7 + rand() * 0.25; // 0.7 - 0.95
+  const recall = 0.65 + rand() * 0.3; // 0.65 - 0.95
+  const f1Score = (2 * precision * recall) / (precision + recall);
+  const rocAuc = 0.7 + rand() * 0.25;
+
+  // tiny artificial delay to mimic network
+  await new Promise((res) => setTimeout(res, 500 + Math.round(rand() * 600)));
+
+  return {
+    creditScore,
+    creditRating,
+    justification,
+    modelAnalysis: {
+      precision,
+      recall,
+      f1Score,
+      rocAuc,
+      modelUsed: 'Simulated Random Forest',
+    },
+  };
 };
