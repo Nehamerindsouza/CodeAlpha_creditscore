@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M21 12a9 9 0 1 1-6.219-8.56'%3e%3c/path%3e%3cpath d='M12 3v1M12 20v1M4 12H3M21 12h-1'%3e%3c/path%3e%3cpath d='M15.536 15.536L12 12'%3e%3c/path%3e%3c/svg%3e" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Credit Scoring Model Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Add Babel for in-browser JSX/TSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.25.0"
+  }
+}
+</script>
+</head>
+  <body class="bg-slate-900 text-white">
+    <div id="root"></div>
+    <!-- Change script type to 'text/babel' and add 'data-type="module"' for Babel to process it correctly -->
+    <script type="text/babel" data-type="module" src="/index.tsx"></script>
+  </body>
+</html>

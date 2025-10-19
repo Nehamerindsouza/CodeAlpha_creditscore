@@ -1,0 +1,5 @@
+{
+  "name": "Credit Scoring Model Simulator",
+  "description": "An AI-powered application to predict an individual's creditworthiness using past financial data, simulating a classification model's assessment with detailed performance metrics.",
+  "requestFramePermissions": []
+}
